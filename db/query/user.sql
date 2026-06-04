@@ -20,7 +20,15 @@ ORDER BY id
 LIMIT $1
 OFFSET $2;
 
--- name: UpdateUser :exec
+-- name: UpdateUser :one
 UPDATE users
-SET username = $2
-WHERE id = $1;
+SET 
+    username = $2,
+    email = $3,
+    password_hash = $4,
+    display_name = $5,
+    bio = $6,
+    avatar_url = $7,
+    updated_at = now()
+WHERE id = $1
+RETURNING *;

@@ -121,18 +121,51 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 	return items, nil
 }
 
-const updateUser = `-- name: UpdateUser :exec
+const updateUser = `-- name: UpdateUser :one
 UPDATE users
-SET username = $2
+SET 
+    username = $2,
+    email = $3,
+    password_hash = $4,
+    display_name = $5,
+    bio = $6,
+    avatar_url = $7,
+    updated_at = now()
 WHERE id = $1
+RETURNING id, username, email, password_hash, display_name, bio, avatar_url, created_at, updated_at
 `
 
 type UpdateUserParams struct {
-	ID       int64  `json:"id"`
-	Username string `json:"username"`
+	ID           int64       `json:"id"`
+	Username     string      `json:"username"`
+	Email        string      `json:"email"`
+	PasswordHash string      `json:"password_hash"`
+	DisplayName  pgtype.Text `json:"display_name"`
+	Bio          pgtype.Text `json:"bio"`
+	AvatarUrl    pgtype.Text `json:"avatar_url"`
 }
 
-func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
-	_, err := q.db.Exec(ctx, updateUser, arg.ID, arg.Username)
-	return err
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, updateUser,
+		arg.ID,
+		arg.Username,
+		arg.Email,
+		arg.PasswordHash,
+		arg.DisplayName,
+		arg.Bio,
+		arg.AvatarUrl,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.PasswordHash,
+		&i.DisplayName,
+		&i.Bio,
+		&i.AvatarUrl,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
