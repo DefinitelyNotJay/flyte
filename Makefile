@@ -12,9 +12,10 @@ migrateup:
 
 migratedown:
 	migrate -path db/migration -database "postgresql://root:password@localhost:5433/flyte?sslmode=disable" -verbose down
-
 sqlc:
 	sqlc generate
+server:
+	go run main.go
 
 test:
 	go test -v -cover ./...
