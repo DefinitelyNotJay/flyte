@@ -4,19 +4,19 @@ import (
 	"context"
 	"flyte/api"
 	db "flyte/db/sqlc"
+	"flyte/util"
 	"log"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-const (
-	dbSource      = "postgresql://root:password@localhost:5433/flyte?sslmode=disable"
-	serverAddress = "0.0.0.0:8000"
-)
-
 func main() {
-	connPool, err := pgxpool.New(context.Background(), dbSource)
+	config, err := util.LoadConfig(".")
+	if err != nil {
+		log.Fatal("cannot load config", err)
+	}
 
+	connPool, err := pgxpool.New(context.Background(), config.DBSource)
 	if err != nil {
 		log.Fatal("cannot connect to db:", err)
 	}
@@ -24,7 +24,7 @@ func main() {
 	store := db.NewStore(connPool)
 	server := api.Newserver(store)
 
-	err = server.Start(serverAddress)
+	err = server.Start(config.ServerAddress)
 	if err != nil {
 		log.Fatal("cannot start server", err)
 	}
