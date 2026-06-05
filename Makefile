@@ -18,3 +18,8 @@ server:
 	go run main.go
 test:
 	go test -v -cover ./...
+
+mock:
+	mockgen -source=db/sqlc/store.go -destination=db/mock/store.go -package=mockdb -aux_files=github.com/DefinitelyNotJay/flyte/db/sqlc=db/sqlc/querier.go
+
+.PHONY: postgres createdb dropdb migrateup migratedown sqlc server test mock
