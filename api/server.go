@@ -1,17 +1,17 @@
 package api
 
 import (
-	db "flyte/db/sqlc"
+	db "github.com/DefinitelyNotJay/flyte/db/sqlc"
 
 	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
-	store  *db.Store
+	store  db.Store
 	router *gin.Engine
 }
 
-func Newserver(store *db.Store) *Server {
+func Newserver(store db.Store) *Server {
 	server := &Server{
 		store: store,
 	}

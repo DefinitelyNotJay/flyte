@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"flyte/api"
-	db "flyte/db/sqlc"
-	"flyte/util"
 	"log"
+
+	"github.com/DefinitelyNotJay/flyte/api"
+	db "github.com/DefinitelyNotJay/flyte/db/sqlc"
+	"github.com/DefinitelyNotJay/flyte/util"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

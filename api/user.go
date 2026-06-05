@@ -2,8 +2,9 @@ package api
 
 import (
 	"database/sql"
-	db "flyte/db/sqlc"
 	"net/http"
+
+	db "github.com/DefinitelyNotJay/flyte/db/sqlc"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgtype"

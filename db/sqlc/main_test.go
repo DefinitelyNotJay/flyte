@@ -2,10 +2,11 @@ package db
 
 import (
 	"context"
-	"flyte/util"
 	"log"
 	"os"
 	"testing"
+
+	"github.com/DefinitelyNotJay/flyte/util"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )

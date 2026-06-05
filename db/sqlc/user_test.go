@@ -2,9 +2,10 @@ package db
 
 import (
 	"context"
-	"flyte/util"
 	"testing"
 	"time"
+
+	"github.com/DefinitelyNotJay/flyte/util"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
