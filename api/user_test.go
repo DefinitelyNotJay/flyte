@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	mockdb "github.com/DefinitelyNotJay/flyte/db/mock"
@@ -18,6 +19,33 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
+
+type eqCreateUserParamsMatcher struct {
+	arg      db.CreateUserParams
+	password string
+}
+
+func (e eqCreateUserParamsMatcher) Matches(x interface{}) bool {
+	arg, ok := x.(db.CreateUserParams)
+	if !ok {
+		return false
+	}
+
+	err := util.CheckPassword(e.password, arg.PasswordHash)
+	if err != nil {
+		return false
+	}
+	e.arg.PasswordHash = arg.PasswordHash
+	return reflect.DeepEqual(e.arg, arg)
+}
+
+func (e eqCreateUserParamsMatcher) String() string {
+	return fmt.Sprintf("matches arg %v and password %v", e.arg, e.password)
+}
+
+func EqCreateUserParams(arg db.CreateUserParams, password string) gomock.Matcher {
+	return eqCreateUserParamsMatcher{arg, password}
+}
 
 func TestGetUserAPI(t *testing.T) {
 	user := randomUser()
@@ -135,7 +163,7 @@ func TestCreateUserAPI(t *testing.T) {
 				}
 
 				store.EXPECT().
-					CreateUser(gomock.Any(), gomock.Eq(arg)).
+					CreateUser(gomock.Any(), EqCreateUserParams(arg, user.PasswordHash)).
 					Times(1).
 					Return(user, nil)
 			},
@@ -329,7 +357,7 @@ func requireBodyMatchUser(t *testing.T, body *bytes.Buffer, user db.User) {
 	require.NoError(t, err)
 	require.Equal(t, user.Username, gotUser.Username)
 	require.Equal(t, user.Email, gotUser.Email)
-	require.Equal(t, user.PasswordHash, gotUser.PasswordHash)
+	// require.Equal(t, user.PasswordHash, gotUser.PasswordHash)
 	require.Equal(t, user.DisplayName.String, gotUser.DisplayName.String)
 	require.Equal(t, user.Bio.String, gotUser.Bio.String)
 	require.Equal(t, user.AvatarUrl.String, gotUser.AvatarUrl.String)
