@@ -10,11 +10,18 @@ import (
 
 type Querier interface {
 	CreateLike(ctx context.Context, arg CreateLikeParams) (Like, error)
+	CreatePost(ctx context.Context, arg CreatePostParams) (Post, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	DeleteLike(ctx context.Context, arg DeleteLikeParams) error
+	DeletePost(ctx context.Context, id int64) error
 	GetLike(ctx context.Context, arg GetLikeParams) (Like, error)
+	GetPost(ctx context.Context, id int64) (Post, error)
 	GetUser(ctx context.Context, id int64) (User, error)
+	ListLikesByPost(ctx context.Context, arg ListLikesByPostParams) ([]Like, error)
+	ListLikesByUser(ctx context.Context, arg ListLikesByUserParams) ([]Like, error)
+	ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	UpdatePost(ctx context.Context, arg UpdatePostParams) (Post, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }
 

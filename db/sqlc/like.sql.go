@@ -61,3 +61,71 @@ func (q *Queries) GetLike(ctx context.Context, arg GetLikeParams) (Like, error) 
 	err := row.Scan(&i.UserID, &i.PostID, &i.CreatedAt)
 	return i, err
 }
+
+const listLikesByPost = `-- name: ListLikesByPost :many
+SELECT user_id, post_id, created_at FROM likes
+WHERE post_id = $1
+ORDER BY created_at DESC
+LIMIT $2
+OFFSET $3
+`
+
+type ListLikesByPostParams struct {
+	PostID int64 `json:"post_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListLikesByPost(ctx context.Context, arg ListLikesByPostParams) ([]Like, error) {
+	rows, err := q.db.Query(ctx, listLikesByPost, arg.PostID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Like
+	for rows.Next() {
+		var i Like
+		if err := rows.Scan(&i.UserID, &i.PostID, &i.CreatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLikesByUser = `-- name: ListLikesByUser :many
+SELECT user_id, post_id, created_at FROM likes
+WHERE user_id = $1
+ORDER BY created_at DESC
+LIMIT $2
+OFFSET $3
+`
+
+type ListLikesByUserParams struct {
+	UserID int64 `json:"user_id"`
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListLikesByUser(ctx context.Context, arg ListLikesByUserParams) ([]Like, error) {
+	rows, err := q.db.Query(ctx, listLikesByUser, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Like
+	for rows.Next() {
+		var i Like
+		if err := rows.Scan(&i.UserID, &i.PostID, &i.CreatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
