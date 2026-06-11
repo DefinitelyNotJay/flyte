@@ -35,6 +35,21 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 	return m.recorder
 }
 
+// CreateLike mocks base method.
+func (m *MockStore) CreateLike(ctx context.Context, arg db.CreateLikeParams) (db.Like, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateLike", ctx, arg)
+	ret0, _ := ret[0].(db.Like)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateLike indicates an expected call of CreateLike.
+func (mr *MockStoreMockRecorder) CreateLike(ctx, arg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateLike", reflect.TypeOf((*MockStore)(nil).CreateLike), ctx, arg)
+}
+
 // CreateUser mocks base method.
 func (m *MockStore) CreateUser(ctx context.Context, arg db.CreateUserParams) (db.User, error) {
 	m.ctrl.T.Helper()
@@ -50,6 +65,20 @@ func (mr *MockStoreMockRecorder) CreateUser(ctx, arg interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateUser", reflect.TypeOf((*MockStore)(nil).CreateUser), ctx, arg)
 }
 
+// DeleteLike mocks base method.
+func (m *MockStore) DeleteLike(ctx context.Context, arg db.DeleteLikeParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteLike", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// DeleteLike indicates an expected call of DeleteLike.
+func (mr *MockStoreMockRecorder) DeleteLike(ctx, arg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteLike", reflect.TypeOf((*MockStore)(nil).DeleteLike), ctx, arg)
+}
+
 // ExecTx mocks base method.
 func (m *MockStore) ExecTx(ctx context.Context, fn func(*db.Queries) error) error {
 	m.ctrl.T.Helper()
@@ -62,6 +91,21 @@ func (m *MockStore) ExecTx(ctx context.Context, fn func(*db.Queries) error) erro
 func (mr *MockStoreMockRecorder) ExecTx(ctx, fn interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ExecTx", reflect.TypeOf((*MockStore)(nil).ExecTx), ctx, fn)
+}
+
+// GetLike mocks base method.
+func (m *MockStore) GetLike(ctx context.Context, arg db.GetLikeParams) (db.Like, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetLike", ctx, arg)
+	ret0, _ := ret[0].(db.Like)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetLike indicates an expected call of GetLike.
+func (mr *MockStoreMockRecorder) GetLike(ctx, arg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetLike", reflect.TypeOf((*MockStore)(nil).GetLike), ctx, arg)
 }
 
 // GetUser mocks base method.
