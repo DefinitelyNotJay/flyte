@@ -17,6 +17,7 @@ type Querier interface {
 	GetLike(ctx context.Context, arg GetLikeParams) (Like, error)
 	GetPost(ctx context.Context, id int64) (Post, error)
 	GetUser(ctx context.Context, id int64) (User, error)
+	GetUserByUsername(ctx context.Context, username string) (User, error)
 	ListLikesByPost(ctx context.Context, arg ListLikesByPostParams) ([]Like, error)
 	ListLikesByUser(ctx context.Context, arg ListLikesByUserParams) ([]Like, error)
 	ListPosts(ctx context.Context, arg ListPostsParams) ([]Post, error)
