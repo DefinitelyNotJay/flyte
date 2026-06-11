@@ -11,10 +11,10 @@ import (
 )
 
 type Server struct {
-	config util.Config
-	store  db.Store
+	config     util.Config
+	store      db.Store
 	tokenMaker token.Maker
-	router *gin.Engine
+	router     *gin.Engine
 }
 
 func NewServer(config util.Config, store db.Store) (*Server, error) {
@@ -24,19 +24,26 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 	}
 
 	server := &Server{
-		config: config,
-		store: store,
+		config:     config,
+		store:      store,
 		tokenMaker: tokenMaker,
 	}
+
+	server.setupRouter()
+	return server, nil
+}
+
+func (server *Server) setupRouter() {
 	router := gin.Default()
 
 	router.POST("/users", server.createUser)
 	router.POST("/users/login", server.loginUser)
-	router.GET("/users", server.listUser)
-	router.GET("/users/:id", server.getUser)
+
+	authRoutes := router.Group("/").Use(authMiddleware(server.tokenMaker))
+	authRoutes.GET("/users", server.listUser)
+	authRoutes.GET("/users/:id", server.getUser)
 
 	server.router = router
-	return server, nil
 }
 
 func (server *Server) Start(address string) error {
