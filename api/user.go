@@ -1,32 +1,45 @@
 package api
 
 import (
-	"database/sql"
+	"errors"
 	"net/http"
 
 	db "github.com/DefinitelyNotJay/flyte/db/sqlc"
 	"github.com/DefinitelyNotJay/flyte/util"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type createUserRequest struct {
-	Username     string      `json:"username" binding:"required,alphanum"`
-	Email        string      `json:"email" binding:"required,email"`
-	PasswordHash string      `json:"password_hash" binding:"required,min=6"`
-	DisplayName  pgtype.Text `json:"display_name"`
-	Bio          pgtype.Text `json:"bio"`
-	AvatarUrl    pgtype.Text `json:"avatar_url"`
-}
-
-type createUserResponse struct {
 	Username    string      `json:"username" binding:"required,alphanum"`
 	Email       string      `json:"email" binding:"required,email"`
+	Password    string      `json:"password" binding:"required,min=6"`
 	DisplayName pgtype.Text `json:"display_name"`
 	Bio         pgtype.Text `json:"bio"`
 	AvatarUrl   pgtype.Text `json:"avatar_url"`
+}
+
+type userResponse struct {
+	Username    string             `json:"username"`
+	Email       string             `json:"email"`
+	DisplayName pgtype.Text        `json:"display_name"`
+	Bio         pgtype.Text        `json:"bio"`
+	AvatarUrl   pgtype.Text        `json:"avatar_url"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+}
+
+func newUserResponse(user db.User) userResponse {
+	return userResponse{
+		Username:    user.Username,
+		Email:       user.Email,
+		DisplayName: user.DisplayName,
+		Bio:         user.Bio,
+		AvatarUrl:   user.AvatarUrl,
+		CreatedAt:   user.CreatedAt,
+	}
 }
 
 func (server *Server) createUser(ctx *gin.Context) {
@@ -36,9 +49,10 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	hashedPassword, err := util.HashPassword(req.PasswordHash)
+	hashedPassword, err := util.HashPassword(req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
 	}
 
 	arg := db.CreateUserParams{
@@ -52,9 +66,10 @@ func (server *Server) createUser(ctx *gin.Context) {
 
 	user, err := server.store.CreateUser(ctx, arg)
 	if err != nil {
-		if pqErr, ok := err.(*pq.Error); ok {
-			switch pqErr.Code.Name() {
-			case "unique_violation":
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			switch pgErr.Code {
+			case "23505": // unique_violation
 				ctx.JSON(http.StatusForbidden, errorResponse(err))
 				return
 			}
@@ -63,14 +78,7 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	rsp := createUserResponse{
-		Username:    user.Username,
-		Email:       user.Email,
-		DisplayName: user.DisplayName,
-		Bio:         user.Bio,
-		AvatarUrl:   user.AvatarUrl,
-	}
-
+	rsp := newUserResponse(user)
 	ctx.JSON(http.StatusOK, rsp)
 }
 
@@ -86,14 +94,14 @@ func (server *Server) getUser(ctx *gin.Context) {
 	}
 	user, err := server.store.GetUser(ctx, req.ID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			ctx.JSON(http.StatusNotFound, errorResponse(err))
 			return
 		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	ctx.JSON(http.StatusOK, user)
+	ctx.JSON(http.StatusOK, newUserResponse(user))
 }
 
 type listUserRequest struct {
@@ -113,14 +121,16 @@ func (server *Server) listUser(ctx *gin.Context) {
 		Offset: (req.PageID - 1) * req.PageSize,
 	}
 
-	user, err := server.store.ListUsers(ctx, arg)
+	users, err := server.store.ListUsers(ctx, arg)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			ctx.JSON(http.StatusNotFound, errorResponse(err))
-			return
-		}
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
-	ctx.JSON(http.StatusOK, user)
+
+	response := make([]userResponse, len(users))
+	for i, user := range users {
+		response[i] = newUserResponse(user)
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }

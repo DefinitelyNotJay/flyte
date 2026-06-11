@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,6 +15,7 @@ import (
 	"github.com/DefinitelyNotJay/flyte/util"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 )
@@ -77,7 +77,7 @@ func TestGetUserAPI(t *testing.T) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.ID)).
 					Times(1).
-					Return(db.User{}, sql.ErrNoRows)
+					Return(db.User{}, pgx.ErrNoRows)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusNotFound, recorder.Code)
@@ -90,7 +90,7 @@ func TestGetUserAPI(t *testing.T) {
 				store.EXPECT().
 					GetUser(gomock.Any(), gomock.Eq(user.ID)).
 					Times(1).
-					Return(db.User{}, sql.ErrConnDone)
+					Return(db.User{}, pgx.ErrTxClosed)
 			},
 			checkResponse: func(t *testing.T, recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
@@ -120,7 +120,7 @@ func TestGetUserAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := Newserver(store)
+			server := NewServer(store)
 			recorder := httptest.NewRecorder()
 
 			url := fmt.Sprintf("/users/%d", tc.userID)
@@ -135,6 +135,7 @@ func TestGetUserAPI(t *testing.T) {
 
 func TestCreateUserAPI(t *testing.T) {
 	user := randomUser()
+	password := util.RandomPassword()
 
 	testCases := []struct {
 		name          string
@@ -145,25 +146,24 @@ func TestCreateUserAPI(t *testing.T) {
 		{
 			name: "OK",
 			body: gin.H{
-				"username":      user.Username,
-				"email":         user.Email,
-				"password_hash": user.PasswordHash,
-				"display_name":  user.DisplayName.String,
-				"bio":           user.Bio.String,
-				"avatar_url":    user.AvatarUrl.String,
+				"username":     user.Username,
+				"email":        user.Email,
+				"password":     password,
+				"display_name": user.DisplayName.String,
+				"bio":          user.Bio.String,
+				"avatar_url":   user.AvatarUrl.String,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				arg := db.CreateUserParams{
-					Username:     user.Username,
-					Email:        user.Email,
-					PasswordHash: user.PasswordHash,
-					DisplayName:  user.DisplayName,
-					Bio:          user.Bio,
-					AvatarUrl:    user.AvatarUrl,
+					Username:    user.Username,
+					Email:       user.Email,
+					DisplayName: user.DisplayName,
+					Bio:         user.Bio,
+					AvatarUrl:   user.AvatarUrl,
 				}
 
 				store.EXPECT().
-					CreateUser(gomock.Any(), EqCreateUserParams(arg, user.PasswordHash)).
+					CreateUser(gomock.Any(), EqCreateUserParams(arg, password)).
 					Times(1).
 					Return(user, nil)
 			},
@@ -175,18 +175,18 @@ func TestCreateUserAPI(t *testing.T) {
 		{
 			name: "InternalError",
 			body: gin.H{
-				"username":      user.Username,
-				"email":         user.Email,
-				"password_hash": user.PasswordHash,
-				"display_name":  user.DisplayName.String,
-				"bio":           user.Bio.String,
-				"avatar_url":    user.AvatarUrl.String,
+				"username":     user.Username,
+				"email":        user.Email,
+				"password":     password,
+				"display_name": user.DisplayName.String,
+				"bio":          user.Bio.String,
+				"avatar_url":   user.AvatarUrl.String,
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
 					CreateUser(gomock.Any(), gomock.Any()).
 					Times(1).
-					Return(db.User{}, sql.ErrConnDone)
+					Return(db.User{}, pgx.ErrTxClosed)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
@@ -204,13 +204,13 @@ func TestCreateUserAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := Newserver(store)
+			server := NewServer(store)
 			recorder := httptest.NewRecorder()
 
 			data, err := json.Marshal(tc.body)
 			require.NoError(t, err)
 
-			url := "/users/"
+			url := "/users"
 			request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(data))
 			require.NoError(t, err)
 
@@ -270,7 +270,7 @@ func TestListUsersAPI(t *testing.T) {
 				store.EXPECT().
 					ListUsers(gomock.Any(), gomock.Any()).
 					Times(1).
-					Return([]db.User{}, sql.ErrConnDone)
+					Return([]db.User{}, pgx.ErrTxClosed)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
 				require.Equal(t, http.StatusInternalServerError, recorder.Code)
@@ -318,10 +318,10 @@ func TestListUsersAPI(t *testing.T) {
 			store := mockdb.NewMockStore(ctrl)
 			tc.buildStubs(store)
 
-			server := Newserver(store)
+			server := NewServer(store)
 			recorder := httptest.NewRecorder()
 
-			url := "/users/"
+			url := "/users"
 			request, err := http.NewRequest(http.MethodGet, url, nil)
 			require.NoError(t, err)
 
@@ -352,12 +352,11 @@ func requireBodyMatchUser(t *testing.T, body *bytes.Buffer, user db.User) {
 	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
-	var gotUser db.User
+	var gotUser userResponse
 	err = json.Unmarshal(data, &gotUser)
 	require.NoError(t, err)
 	require.Equal(t, user.Username, gotUser.Username)
 	require.Equal(t, user.Email, gotUser.Email)
-	// require.Equal(t, user.PasswordHash, gotUser.PasswordHash)
 	require.Equal(t, user.DisplayName.String, gotUser.DisplayName.String)
 	require.Equal(t, user.Bio.String, gotUser.Bio.String)
 	require.Equal(t, user.AvatarUrl.String, gotUser.AvatarUrl.String)
@@ -367,7 +366,7 @@ func requireBodyMatchUsers(t *testing.T, body *bytes.Buffer, users []db.User) {
 	data, err := io.ReadAll(body)
 	require.NoError(t, err)
 
-	var gotUsers []db.User
+	var gotUsers []userResponse
 	err = json.Unmarshal(data, &gotUsers)
 	require.NoError(t, err)
 	require.Equal(t, len(users), len(gotUsers))
