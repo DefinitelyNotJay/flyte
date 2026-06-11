@@ -1,0 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Noto+Serif:ital,wght@0,100..900;1,100..900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --muji-bg: 250 250 248;    /* #FAFAF8 */
+    --muji-ink: 15 15 14;      /* #0F0F0E */
+    --muji-accent: 120 113 108; /* #78716C */
+  }
+
+  html {
+    @apply antialiased font-sans;
+  }
+
+  body {
+    @apply bg-muji-bg text-stone-900 dark:bg-muji-ink dark:text-stone-100 transition-colors duration-300;
+  }
+}
+
+/* Subtle scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--muji-accent) / 0.1);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--muji-accent) / 0.2);
+}
