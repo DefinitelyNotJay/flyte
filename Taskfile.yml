@@ -1,29 +1,47 @@
-# yaml-language-server: $schema=https://taskfile.dev/schema.json
-
 version: '3'
 
-vars:
-  GREETING: Hello, world!
-
 tasks:
-  # เพิ่มตรงนี้: เพื่อให้พิมพ์แค่คำสั่ง `task` เปล่าๆ แล้วทำงานได้เลย
   default:
     cmds:
-      - task: dev
+      - task: backend:server
+      - task: frontend:dev
 
-  dev:
+  backend:server:
+    dir: backend
     cmds:
-      - task: open-tools
-      - task: start-servers
-    
-  open-tools:
-    desc: "เปิด VS Code และเว็บเบราว์เซอร์"
-    cmds:
-      - code .
-      - cmd: open "http://localhost:8000"
-#  && open "http://localhost:8000/docs"
-
-  start-servers:
-    desc: "รัน Backend"
-    cmds: 
       - make server
+
+  backend:test:
+    dir: backend
+    cmds:
+      - make test
+
+  backend:build:
+    dir: backend
+    cmds:
+      - go build -o bin/main main.go
+
+  frontend:dev:
+    dir: frontend
+    cmds:
+      - bun run dev
+
+  frontend:build:
+    dir: frontend
+    cmds:
+      - bun run build
+
+  frontend:install:
+    dir: frontend
+    cmds:
+      - bun install
+
+  install:
+    cmds:
+      - task: frontend:install
+      - cd backend && go mod download
+
+  build:
+    cmds:
+      - task: backend:build
+      - task: frontend:build
