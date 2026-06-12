@@ -7,6 +7,7 @@ import (
 	"github.com/DefinitelyNotJay/flyte/token"
 	"github.com/DefinitelyNotJay/flyte/util"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -35,6 +36,11 @@ func NewServer(config util.Config, store db.Store) (*Server, error) {
 
 func (server *Server) setupRouter() {
 	router := gin.Default()
+
+	config := cors.DefaultConfig()
+	config.AllowAllOrigins = true
+	config.AllowHeaders = append(config.AllowHeaders, "Authorization")
+	router.Use(cors.New(config))
 
 	router.POST("/users", server.createUser)
 	router.POST("/users/login", server.loginUser)

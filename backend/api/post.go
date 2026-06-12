@@ -23,7 +23,7 @@ func (server *Server) createPost(ctx *gin.Context) {
 	}
 
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
-	user, err := server.store.GetUserByUsername(ctx, authPayload.Username)
+	user, err := server.store.GetUserByUsernameOrEmail(ctx, authPayload.Username)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -116,7 +116,7 @@ func (server *Server) updatePost(ctx *gin.Context) {
 	}
 
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
-	user, err := server.store.GetUserByUsername(ctx, authPayload.Username)
+	user, err := server.store.GetUserByUsernameOrEmail(ctx, authPayload.Username)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
@@ -163,7 +163,7 @@ func (server *Server) deletePost(ctx *gin.Context) {
 	}
 
 	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
-	user, err := server.store.GetUserByUsername(ctx, authPayload.Username)
+	user, err := server.store.GetUserByUsernameOrEmail(ctx, authPayload.Username)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return

@@ -430,7 +430,8 @@ func TestLoginUserAPI(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					GetUserByUsername(gomock.Any(), gomock.Eq(user.Username)).
+					GetUserByUsernameOrEmail(gomock.Any(), 
+ gomock.Eq(user.Username)).
 					Times(1).
 					Return(user, nil)
 			},
@@ -446,7 +447,8 @@ func TestLoginUserAPI(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					GetUserByUsername(gomock.Any(), gomock.Any()).
+					GetUserByUsernameOrEmail(gomock.Any(), 
+ gomock.Any()).
 					Times(1).
 					Return(db.User{}, pgx.ErrNoRows)
 			},
@@ -462,7 +464,8 @@ func TestLoginUserAPI(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					GetUserByUsername(gomock.Any(), gomock.Eq(user.Username)).
+					GetUserByUsernameOrEmail(gomock.Any(), 
+ gomock.Eq(user.Username)).
 					Times(1).
 					Return(user, nil)
 			},
@@ -478,7 +481,8 @@ func TestLoginUserAPI(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					GetUserByUsername(gomock.Any(), gomock.Any()).
+					GetUserByUsernameOrEmail(gomock.Any(), 
+ gomock.Any()).
 					Times(1).
 					Return(db.User{}, pgx.ErrTxClosed)
 			},
@@ -494,11 +498,12 @@ func TestLoginUserAPI(t *testing.T) {
 			},
 			buildStubs: func(store *mockdb.MockStore) {
 				store.EXPECT().
-					GetUserByUsername(gomock.Any(), gomock.Any()).
-					Times(0)
+					GetUserByUsernameOrEmail(gomock.Any(), gomock.Any()).
+					Times(1).
+					Return(db.User{}, pgx.ErrNoRows)
 			},
 			checkResponse: func(recorder *httptest.ResponseRecorder) {
-				require.Equal(t, http.StatusBadRequest, recorder.Code)
+				require.Equal(t, http.StatusNotFound, recorder.Code)
 			},
 		},
 	}
